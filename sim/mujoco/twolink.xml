@@ -1,0 +1,47 @@
+<mujoco model="twolinkbot">
+  <compiler angle="radian" meshdir="../assets/twolink/meshes"/>
+  <option timestep="0.00166666667" gravity="0 0 -9.81"/>
+  <visual><global offwidth="1280" offheight="960"/></visual>
+  <asset>
+    <mesh name="base" file="base.STL"/>
+    <mesh name="link1" file="link1.STL"/>
+    <mesh name="link2" file="link2.STL"/>
+    <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1="0.25 0.25 0.25" rgb2="0.3 0.3 0.3"/>
+    <material name="grid" texture="grid" texrepeat="8 8"/>
+    <material name="grey" rgba="0.6 0.6 0.6 1"/>
+    <material name="dark" rgba="0.15 0.15 0.15 1"/>
+  </asset>
+  <default>
+    <geom contype="0" conaffinity="0"/>
+  </default>
+  <worldbody>
+    <light pos="0 0 2" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
+    <geom name="floor" type="plane" size="2 2 0.01" material="grid"/>
+    <body name="base_link">
+      <inertial pos="-0.0455 -0.0455 0.0455" mass="0.1" diaginertia="0.000131508 0.000131508 0.000125"/>
+      <geom type="mesh" mesh="base" material="grey"/>
+      <body name="link1" pos="0 0 0.128">
+        <inertial pos="-0.0715 0 0.03" mass="0.5" diaginertia="0.00027075 0.00180204 0.00180204"/>
+        <joint name="joint1" type="hinge" axis="0 0 1" range="-3.0 3.0" limited="true" damping="0.01"/>
+        <geom type="mesh" mesh="link1" material="grey"/>
+        <body name="link2" pos="0.143 0 0.052">
+          <inertial pos="-0.051 0 0.003" mass="0.2" diaginertia="3.9e-05 0.0003756 0.0004134"/>
+          <joint name="joint2" type="hinge" axis="0 0 1" range="-3.0 3.0" limited="true" damping="0.01"/>
+          <geom type="mesh" mesh="link2" material="grey"/>
+          <geom name="d435" type="box" size="0.012525 0.045 0.0125" pos="0.100525 0 0.0285" material="dark"/>
+          <site name="color_optical" pos="0.10853 0.03233 0.02864" quat="0.503466 -0.498774 0.500723 -0.497013" size="0.004" rgba="0 1 0 1"/>
+          <camera name="color" pos="0.10853 0.03233 0.02864" xyaxes="0.00450823 -0.999955 -0.0083999 -0.000962155 -0.00840432 0.999964" fovy="43.6014"/>
+        </body>
+      </body>
+    </body>
+    <body name="marker" mocap="true" pos="0.5 0 0.2">
+      <geom type="box" size="0.03 0.03 0.001" rgba="0.95 0.95 0.95 1"/>
+      <geom type="box" size="0.02 0.02 0.0012" rgba="0.05 0.05 0.05 1"/>
+      <site name="marker_frame" size="0.003" rgba="1 0 0 1"/>
+    </body>
+  </worldbody>
+  <actuator>
+    <position name="joint1" joint="joint1" kp="4.0" kv="0.4" ctrlrange="-3.0 3.0" ctrllimited="true"/>
+    <position name="joint2" joint="joint2" kp="1.0" kv="0.08" ctrlrange="-3.0 3.0" ctrllimited="true"/>
+  </actuator>
+</mujoco>

@@ -9,3 +9,6 @@ __pycache__/
 .idea/
 *.swp
 *~
+sim/logs/
+sim/outputs/
+sim/assets/usd/
