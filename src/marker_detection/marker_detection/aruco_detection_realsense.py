@@ -21,6 +21,7 @@ class ArucoDetectorNode_Realsense(Node):
         # 아루코 설정
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50) # 마커 사전 선택 (4x4, 50개)
         self.aruco_params = cv2.aruco.DetectorParameters_create() # 마커 검출 세부 설정 (기본값)
+        self.aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
         self.marker_length = 0.06 # 마커 한 변 길이 (m)
 
         # Subscriber
@@ -61,7 +62,11 @@ class ArucoDetectorNode_Realsense(Node):
 
         if ids is not None and len(ids) > 0: # 마커 검출에 성공했다면?
             # 마커 3차원 위치 추정
-            rvec, tvec, quaternion = self.my_estimatePoseSingleMarkers(corners, ids)
+            result = self.my_estimatePoseSingleMarkers(corners, ids)
+            if result is None:
+                self.image_pub.publish(self.bridge.cv2_to_imgmsg(frame, encoding='bgr8'))
+                return
+            rvec, tvec, quaternion = result
 
             # 마커 그리기
             cv2.aruco.drawDetectedMarkers(frame, corners, ids)
@@ -81,7 +86,7 @@ class ArucoDetectorNode_Realsense(Node):
             pose_msg.orientation.w = quaternion[3]
             self.pose_pub.publish(pose_msg)
 
-            self.get_logger().info(f'{pose_msg.position}, {pose_msg.orientation}')
+            self.get_logger().info(f'{pose_msg.position}, {pose_msg.orientation}', throttle_duration_sec=1.0)
 
         # OpenCV -> ROS Image
         out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
@@ -104,7 +109,8 @@ class ArucoDetectorNode_Realsense(Node):
                 corner = corners[i][0]
 
                 # solvePnP를 사용하여 3차원 위치 추정
-                success, rvec, tvec = cv2.solvePnP(object_points, corner, self.camera_matrix , self.dist_coeffs)
+                success, rvec, tvec = cv2.solvePnP(object_points, corner, self.camera_matrix , self.dist_coeffs,
+                                                   flags=cv2.SOLVEPNP_IPPE_SQUARE)
 
                 R = Rotation.from_rotvec(rvec.flatten())
                 quaternion = R.as_quat() # xyzw
@@ -120,7 +126,8 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     node.destroy_node()
-    rclpy.shutdown()
+    if rclpy.ok():
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

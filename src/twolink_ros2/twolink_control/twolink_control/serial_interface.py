@@ -100,6 +100,10 @@ class SerialSubscriber(Node):
 
         # 타이머: 주기적으로 TX + publish
         self.timer = self.create_timer(pub_period, self.tx_and_publish)
+        self.last_tx_time = 0.0
+        command_rate = float(self.declare_parameter('command_rate', 0.0).value)
+        if command_rate > 1.0 / pub_period:
+            self.command_timer = self.create_timer(1.0 / command_rate, self.tx_command_only)
         self.diagnostic_timer = self.create_timer(2.0, self.report_serial_status)
         self.get_logger().info(
             f'Serial connected: {port}, {baudrate} baud; '
@@ -285,6 +289,7 @@ class SerialSubscriber(Node):
         if request is not None:
             try:
                 self.ser.write(self.build_packet(request))
+                self.last_tx_time = time.monotonic()
             except Exception as e:
                 with self.state_lock:
                     self.pending_request = None
@@ -319,6 +324,16 @@ class SerialSubscriber(Node):
         self.pub_robot_state.publish(msg)
         self.last_published_packet = packet_number
 
+    def tx_command_only(self):
+        if not self.command_received or time.monotonic() - self.last_tx_time < 0.04:
+            return
+        payload = struct.pack('<8f', self.xdes, self.ydes, 0.0, 0.0, self.q1des, self.q2des, 0.0, 0.0)
+        try:
+            self.ser.write(b'J' + payload)
+            self.last_tx_time = time.monotonic()
+        except Exception as e:
+            self.get_logger().error(f"TX error: {e}")
+
     # ---------------- ROS 콜백 ----------------
     def listener_callback(self, cmd: CMD):
         values = (cmd.xdes, cmd.ydes, cmd.q1des, cmd.q2des)
@@ -350,7 +365,8 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     node.destroy_node()
-    rclpy.shutdown()
+    if rclpy.ok():
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
