@@ -104,6 +104,67 @@
     </xacro:inertial_box>
   </link>
 
+  <xacro:property name="cam_back_x" value="0.088"/>
+  <xacro:property name="cam_center_y" value="0.0"/>
+  <xacro:property name="cam_bottom_z" value="0.016"/>
+  <xacro:property name="cam_width" value="0.090"/>
+  <xacro:property name="cam_height" value="0.025"/>
+  <xacro:property name="cam_depth" value="0.02505"/>
+  <xacro:property name="cam_origin_behind_front" value="0.0043"/>
+  <xacro:property name="cam_origin_from_center_y" value="0.0175"/>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="link2"/>
+    <child link="camera_link"/>
+    <origin xyz="${cam_back_x + cam_depth - cam_origin_behind_front} ${cam_center_y + cam_origin_from_center_y} ${cam_bottom_z + cam_height / 2}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_link">
+    <visual>
+      <origin xyz="${cam_origin_behind_front - cam_depth / 2} ${-cam_origin_from_center_y} 0"/>
+      <geometry>
+        <box size="${cam_depth} ${cam_width} ${cam_height}"/>
+      </geometry>
+      <material name="aluminum">
+        <color rgba="0.75 0.75 0.78 1.0"/>
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="${cam_origin_behind_front + 0.0005} ${-cam_origin_from_center_y} 0"/>
+      <geometry>
+        <box size="0.001 ${cam_width - 0.006} ${cam_height - 0.006}"/>
+      </geometry>
+      <material name="glass_black">
+        <color rgba="0.05 0.05 0.05 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="${cam_origin_behind_front - cam_depth / 2} ${-cam_origin_from_center_y} 0"/>
+      <geometry>
+        <box size="${cam_depth} ${cam_width} ${cam_height}"/>
+      </geometry>
+    </collision>
+    <xacro:inertial_box mass="0.072" x="${cam_depth}" y="${cam_width}" z="${cam_height}">
+            <origin xyz="${cam_origin_behind_front - cam_depth / 2} ${-cam_origin_from_center_y} 0"/>
+    </xacro:inertial_box>
+  </link>
+
+  <joint name="camera_color_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_color_frame"/>
+    <origin xyz="-0.00022 0.01483 0.00014" rpy="0.0084 -0.0010 0.0045"/>
+  </joint>
+
+  <link name="camera_color_frame"/>
+
+  <joint name="camera_color_optical_joint" type="fixed">
+    <parent link="camera_color_frame"/>
+    <child link="camera_color_optical_frame"/>
+    <origin xyz="0 0 0" rpy="${-pi / 2} 0 ${-pi / 2}"/>
+  </joint>
+
+  <link name="camera_color_optical_frame"/>
+
 
 
 
